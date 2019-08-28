@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/just1689/entity-sync/es"
+	"github.com/just1689/entity-sync/es/esq"
 	"github.com/just1689/entity-sync/es/shared"
 	"github.com/just1689/pg-gateway/client"
 	"github.com/just1689/pg-gateway/query"
@@ -11,9 +12,13 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 )
 
+type PassThroughMsg shared.EntityKey
+
 var entitySync es.EntitySync
+var oemPublisher = esq.BuildPublisher(os.Getenv("nsqAddr"))("worker/oems/v1")
 
 func main() {
 
@@ -47,8 +52,17 @@ func passThrough(secret string, b []byte) {
 		return
 	}
 
-	//The client is requesting some data
-	go sendTableToClient(p.Topic, secret)
+	if strings.Contains(string(p.Entity), "table") {
+		//The client is requesting some data
+		go sendTableToClient(p.ID, secret)
+		return
+	}
+	if string(p.Entity) == "action" {
+		if p.ID == "oem" {
+			oemPublisher([]byte(""))
+		}
+	}
+
 }
 
 func sendTableToClient(table string, secret string) {
@@ -76,8 +90,4 @@ func sendTableToClient(table string, secret string) {
 			})
 	}
 
-}
-
-type PassThroughMsg struct {
-	Topic string `json:"topic"`
 }
