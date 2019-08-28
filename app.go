@@ -32,7 +32,7 @@ func main() {
 	entitySync = es.Setup(config)
 
 	//Register an entity and tell the library how to fetch and what to write to the client
-	entitySync.RegisterEntityAndDBHandler("sigui", func(entityKey shared.EntityKey, secret string, handler shared.ByteHandler) {
+	entitySync.RegisterEntityAndDBHandler("sigui#ephemeral", func(entityKey shared.EntityKey, secret string, handler shared.ByteHandler) {
 		b, _ := json.Marshal(entityKey.ID)
 		handler(b)
 	})
