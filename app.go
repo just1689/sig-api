@@ -18,7 +18,7 @@ import (
 type PassThroughMsg shared.EntityKey
 
 var entitySync es.EntitySync
-var oemPublisher = esq.BuildPublisher(os.Getenv("nsqAddr"))("worker/oems/v1")
+var oemPublisher = esq.BuildPublisher(os.Getenv("nsqAddr"))("worker.oems.v1")
 
 func main() {
 
@@ -66,7 +66,7 @@ func passThrough(secret string, b []byte) {
 }
 
 func sendTableToClient(table string, secret string) {
-	pgg := os.Getenv("pgGWAddr")
+	pgg := os.Getenv("PGGW")
 	c, err := client.GetEntityManyAsync(pgg, query.Query{
 		Entity: "items",
 		Comparisons: []query.Comparison{
