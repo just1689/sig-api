@@ -32,7 +32,7 @@ func main() {
 	entitySync = es.Setup(config)
 
 	//Register an entity and tell the library how to fetch and what to write to the client
-	entitySync.RegisterEntityAndDBHandler("sigui#ephemeral", func(entityKey shared.EntityKey, secret string, handler shared.ByteHandler) {
+	entitySync.RegisterEntityAndDBHandler("sigui", func(entityKey shared.EntityKey, secret string, handler shared.ByteHandler) {
 		b, _ := json.Marshal(entityKey.ID)
 		handler(b)
 	})
@@ -85,8 +85,8 @@ func sendTableToClient(table string, secret string) {
 	for row := range c {
 		entitySync.Bridge.NotifyAllOfChange(
 			shared.EntityKey{
-				Entity: shared.EntityType(secret),
-				ID:     string(row),
+				Entity: "sigui",
+				ID:     string(row), //TODO: wrap in context
 			})
 	}
 
