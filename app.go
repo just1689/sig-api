@@ -17,9 +17,9 @@ import (
 	"time"
 )
 
-type PassThroughMsg shared.EntityKey
-
 var entitySync es.EntitySync
+
+// --> worker.oems.v1
 var oemPublisher = esq.BuildPublisher(os.Getenv("nsqAddr"))("worker.oems.v1")
 var serviceName = "sig-api-v1"
 
@@ -56,6 +56,7 @@ func main() {
 }
 
 func passThrough(secret string, b []byte) {
+	logrus.Println("passthrough: ", string(b))
 	m := shared.Message{}
 	err := json.Unmarshal(b, &m)
 	if err != nil {
