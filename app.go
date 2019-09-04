@@ -56,29 +56,43 @@ func main() {
 }
 
 func passThrough(secret string, b []byte) {
-	p := PassThroughMsg{}
-	err := json.Unmarshal(b, &p)
+	m := shared.Message{}
+	err := json.Unmarshal(b, &m)
 	if err != nil {
-		logrus.Errorln("error while unmarshaling passThroughMsg from client ws")
+		logrus.Errorln("error while unmarshaling message from pass-through from client ws")
+		logrus.Errorln(err)
+		return
+	}
+	ek := shared.EntityKey{}
+	err = json.Unmarshal(m.Body, &ek)
+	if err != nil {
+		logrus.Errorln("error while unmarshaling entityKey from pass-through from client ws")
 		logrus.Errorln(err)
 		return
 	}
 
-	if strings.Contains(string(p.Entity), "table") {
+	if strings.Contains(string(ek.Entity), "table") {
 		//The client is requesting some data
-		go sendTableToClient(p.ID, secret)
+		go sendTableToClient(ek.ID, secret)
 		return
 	}
-	if string(p.Entity) == "action" {
-		if p.ID == "oem" {
+	if string(ek.Entity) == "action" {
+		if ek.ID == "oem" {
 			traceID := tracing.NewId()
 			span := tracing.NewSpan(traceID, serviceName, "action.oemPublisher", 0)
 			start := time.Now()
-			oemPublisher([]byte(traceID))
+			m := map[string]string{
+				"traceId": traceID,
+			}
+			mb, _ := json.Marshal(m)
+			oemPublisher(mb)
 			span.SetDuration(time.Since(start))
 			tracing.GlobalPublisher.Enqueue(span)
+			return
 		}
 	}
+	logrus.Println("Could not handle message!", ek.Entity, ek.ID)
+	logrus.Println(string(b))
 
 }
 
