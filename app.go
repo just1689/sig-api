@@ -76,6 +76,7 @@ func passThrough(secret string, b []byte) {
 			start := time.Now()
 			oemPublisher([]byte(traceID))
 			span.SetDuration(time.Since(start))
+			tracing.GlobalPublisher.Enqueue(span)
 		}
 	}
 
