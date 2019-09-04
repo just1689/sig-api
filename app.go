@@ -8,19 +8,31 @@ import (
 	"github.com/just1689/entity-sync/es/shared"
 	"github.com/just1689/pg-gateway/client"
 	"github.com/just1689/pg-gateway/query"
+	"github.com/just1689/tracing"
 	"github.com/sirupsen/logrus"
 	"net"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 type PassThroughMsg shared.EntityKey
 
 var entitySync es.EntitySync
 var oemPublisher = esq.BuildPublisher(os.Getenv("nsqAddr"))("worker.oems.v1")
+var serviceName = "sig-api-v1"
 
 func main() {
+
+	tracing.StartTracing(tracing.Config{
+		Url:             os.Getenv("tracingUrl"),
+		CacheSize:       1024,
+		FlushTimeout:    1,
+		FlushSize:       10,
+		SleepBetweenErr: 1,
+		RetryErr:        true,
+	})
 
 	// Provide a configuration
 	config := es.Config{
@@ -59,7 +71,11 @@ func passThrough(secret string, b []byte) {
 	}
 	if string(p.Entity) == "action" {
 		if p.ID == "oem" {
-			oemPublisher([]byte(""))
+			traceID := tracing.NewId()
+			span := tracing.NewSpan(traceID, serviceName, "action.oemPublisher", 0)
+			start := time.Now()
+			oemPublisher([]byte(traceID))
+			span.SetDuration(time.Since(start))
 		}
 	}
 
